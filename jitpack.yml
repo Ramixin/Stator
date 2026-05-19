@@ -6,4 +6,4 @@ before_install:
   - gradle wrapper --gradle-version 8.11.1 --no-daemon --stacktrace
   - mv temp.gradle build.gradle
 install:
-  - ./gradlew completeJar
+  - ./gradlew completeJar publishToMavenLocal

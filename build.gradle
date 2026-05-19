@@ -3,6 +3,7 @@ plugins {
     id 'net.fabricmc.fabric-loom' version '1.15.5' apply false
     // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
     id 'net.neoforged.moddev' version '2.0.141' apply false
+    id 'maven-publish'
 }
 
 tasks.register("completeJar", Jar) {
@@ -18,4 +19,16 @@ tasks.register("completeJar", Jar) {
     from(project(":neoforge").sourceSets.main.output)
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
+
+            artifact(tasks.named('completeJar'))
+        }
+    }
 }
