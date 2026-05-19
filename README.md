@@ -25,8 +25,8 @@ Dynamo is the official implementation of Stator. Below are the links to the repo
 
 | Loader   | Repository                                   |
 |----------|----------------------------------------------|
-| Fabric   | https://github.com/FabricMC/dynamo-fabric    |
-| NeoForge | https://github.com/neoforged/dynamo-neoforge |
+| Fabric   | https://github.com/ramixin/dynamo-fabric     |
+| NeoForge | https://github.com/ramixin/dynamo-neoforge   |
 
 
 # License
