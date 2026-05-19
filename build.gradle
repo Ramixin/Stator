@@ -28,7 +28,10 @@ publishing {
             artifactId = project.name
             version = project.version
 
-            artifact(tasks.named('completeJar'))
+            artifact(tasks.named('completeJar')) {
+                classifier = 'multiloader'
+                extension = 'jar'
+            }
         }
     }
 }
