@@ -4,3 +4,18 @@ plugins {
     // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
     id 'net.neoforged.moddev' version '2.0.141' apply false
 }
+
+tasks.register("completeJar", Jar) {
+    archiveClassifier = "multiloader"
+    archiveBaseName = "stator"
+    archiveVersion = project.version.toString()
+    destinationDirectory = layout.buildDirectory.dir("libs")
+
+    dependsOn(":common:classes", ":fabric:classes", ":neoforge:classes")
+
+    from(project(":common").sourceSets.main.output)
+    from(project(":fabric").sourceSets.main.output)
+    from(project(":neoforge").sourceSets.main.output)
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
