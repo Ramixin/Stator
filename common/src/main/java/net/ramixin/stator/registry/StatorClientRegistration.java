@@ -21,7 +21,7 @@ public final class StatorClientRegistration {
         SERVICE.clientboundHandler(type, handler);
     }
 
-    public static <M extends AbstractContainerMenu, S extends Screen & MenuAccess<M>> void screen(MenuType<M> menuType, TriFunction<M, Inventory, Component, S> screenFactory) {
+    public static <M extends AbstractContainerMenu, S extends Screen & MenuAccess<M>> void screen(Registrant<MenuType<M>> menuType, TriFunction<M, Inventory, Component, S> screenFactory) {
         SERVICE.screen(menuType, screenFactory);
     }
 }

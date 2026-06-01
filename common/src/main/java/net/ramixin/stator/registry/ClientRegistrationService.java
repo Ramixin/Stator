@@ -16,5 +16,5 @@ public interface ClientRegistrationService {
 
     <T extends CustomPacketPayload> void clientboundHandler(CustomPacketPayload.Type<T> type, Consumer<ClientPayloadHandlerContext<T>> handler);
 
-    <M extends AbstractContainerMenu, S extends Screen & MenuAccess<M>> void screen(MenuType<M> menuType, TriFunction<M, Inventory, Component, S> screenFactory);
+    <M extends AbstractContainerMenu, S extends Screen & MenuAccess<M>> void screen(Registrant<MenuType<M>> menuType, TriFunction<M, Inventory, Component, S> screenFactory);
 }
