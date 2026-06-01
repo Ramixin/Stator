@@ -1,6 +1,7 @@
 package net.ramixin.stator.networking;
 
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.ramixin.stator.registry.StatorClientRegistration;
 
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
@@ -13,8 +14,12 @@ public final class StatorClientNetworking {
         SERVICE.sendServerbound(payload);
     }
 
+    /**
+     * @deprecated Use {@link StatorClientRegistration#clientboundHandler(CustomPacketPayload.Type, Consumer)} instead.
+     */
+    @Deprecated
     public static <T extends CustomPacketPayload> void registerClientboundHandler(CustomPacketPayload.Type<T> type, Consumer<ClientPayloadHandlerContext<T>> handler) {
-        SERVICE.registerClientboundHandler(type, handler);
+        StatorClientRegistration.clientboundHandler(type, handler);
     }
 
 }
