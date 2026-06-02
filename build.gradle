@@ -7,7 +7,7 @@ plugins {
 }
 
 tasks.register("completeJar", Jar) {
-    archiveClassifier = "multiloader"
+    archiveClassifier = ""
     archiveBaseName = "stator"
     archiveVersion = project.version.toString()
     destinationDirectory = layout.buildDirectory.dir("libs")
@@ -29,7 +29,6 @@ publishing {
             version = project.version
 
             artifact(tasks.named('completeJar')) {
-                classifier = 'multiloader'
                 extension = 'jar'
             }
         }
