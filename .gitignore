@@ -1,24 +1,18 @@
-# eclipse
-bin
-*.launch
-.settings
-.metadata
-.classpath
-.project
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+.kotlin
 
-# idea
-out
-*.ipr
+### IntelliJ IDEA ###
+.idea
 *.iws
 *.iml
-.idea/*
-!.idea/scopes
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
 
-# gradle
-build
-.gradle
-
-# other
-eclipse
 run
 runs

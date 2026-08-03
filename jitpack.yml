@@ -1,9 +1,6 @@
-
 before_install:
   - sdk install java 25-tem
   - sdk use java 25-tem
   - mv build.gradle temp.gradle
-  - gradle wrapper --gradle-version 8.11.1 --no-daemon --stacktrace
+  - gradle wrapper --gradle-version 9.6.1 --no-daemon --stacktrace
   - mv temp.gradle build.gradle
-install:
-  - ./gradlew completeJar publishToMavenLocal
