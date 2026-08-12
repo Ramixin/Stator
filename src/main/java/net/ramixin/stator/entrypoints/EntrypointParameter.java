@@ -22,4 +22,8 @@ public enum EntrypointParameter {
     public TypeMirror getType(Elements elements) {
         return elements.getTypeElement(this.classPath).asType();
     }
+
+    public Class<?> getClazz() throws ClassNotFoundException {
+        return Class.forName("net.ramixin.stator." + this.classPath);
+    }
 }

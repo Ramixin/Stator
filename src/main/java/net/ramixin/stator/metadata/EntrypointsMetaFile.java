@@ -46,30 +46,41 @@ public final class EntrypointsMetaFile {
 
     private static EntrypointsMetaFile readV0(JsonObject object, Logger logger) {
         return new EntrypointsMetaFile(
-                extractV0entrypoints(object.getAsJsonArray("client"), logger),
-                extractV0entrypoints(object.getAsJsonArray("server"), logger),
-                extractV0entrypoints(object.getAsJsonArray("common"), logger)
+                extractV0Entrypoints(object.getAsJsonArray("client"), logger),
+                extractV0Entrypoints(object.getAsJsonArray("server"), logger),
+                extractV0Entrypoints(object.getAsJsonArray("common"), logger)
         );
     }
 
-    private static List<EntrypointData> extractV0entrypoints(JsonArray array, Logger logger) {
+    private static List<EntrypointData> extractV0Entrypoints(JsonArray array, Logger logger) {
         List<EntrypointData> entrypointData = new ArrayList<>();
         for(int i = 0; i < array.size(); i++) {
             JsonObject entry = array.get(i).getAsJsonObject();
             String classPath = entry.get("classPath").getAsString();
             String methodName = entry.get("methodName").getAsString();
             JsonArray parametersArray = entry.getAsJsonArray("parameters");
+            Class<?> clazz;
             try {
-                Class<?> clazz = Class.forName(classPath);
-                Method method = clazz.getDeclaredMethod(methodName);
-                method.setAccessible(true);
-                EntrypointParameter[] parameters = new EntrypointParameter[parametersArray.size()];
-                for(int j = 0; j < parametersArray.size(); j++) {
-                    parameters[j] = EntrypointParameter.valueOf(parametersArray.get(j).getAsString());
-                }
-                entrypointData.add(new EntrypointData(method, parameters));
+                clazz = Class.forName(classPath);
             } catch (ClassNotFoundException e) {
                 logger.error("Failed to get entrypoint class {}", classPath, e);
+                continue;
+            }
+            try {
+
+                EntrypointParameter[] parameters = new EntrypointParameter[parametersArray.size()];
+                Class<?>[] parameterClasses = new Class[parametersArray.size()];
+                for(int j = 0; j < parametersArray.size(); j++) {
+                    parameters[j] = EntrypointParameter.valueOf(parametersArray.get(j).getAsString());
+                    parameterClasses[j] = parameters[j].getClazz();
+                }
+
+                Method method = clazz.getDeclaredMethod(methodName, parameterClasses);
+                method.setAccessible(true);
+
+                entrypointData.add(new EntrypointData(method, parameters));
+            } catch(ClassNotFoundException e) {
+                logger.error("Failed to get parameter class {}", classPath, e);
             } catch (NoSuchMethodException e) {
                 logger.error("Failed to get entrypoint method {}#{}", classPath, methodName, e);
             } catch (IllegalArgumentException e) {

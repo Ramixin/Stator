@@ -3,6 +3,7 @@ package net.ramixin.stator.metadata;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.ramixin.stator.events.StatorEventAnnotation;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -41,6 +42,12 @@ public final class EventsMetaFile {
                 logger.error("Failed to get annotation class {}", key, e);
                 continue;
             }
+            StatorEventAnnotation annotation = anno.getAnnotation(StatorEventAnnotation.class);
+            if(annotation == null) {
+                logger.error("Failed to get load annotation {}", key);
+                continue;
+            }
+            Class<?> contextClazz = annotation.context();
             List<Method> methods = new ArrayList<>();
             JsonArray jsonArray = entries.getAsJsonArray(key);
             for(int i = 0; i < jsonArray.size(); i++) {
@@ -49,7 +56,7 @@ public final class EventsMetaFile {
                 String methodName = entry.get("methodName").getAsString();
                 try {
                     Class<?> clazz = Class.forName(classPath);
-                    Method method = clazz.getDeclaredMethod(methodName);
+                    Method method = clazz.getDeclaredMethod(methodName, contextClazz);
                     method.setAccessible(true);
                     methods.add(method);
                 } catch (ClassNotFoundException e) {

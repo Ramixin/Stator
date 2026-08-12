@@ -2,6 +2,7 @@ package net.ramixin.stator.metadata;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.ramixin.stator.events.Event;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -50,7 +51,7 @@ public final class DispatchersMetafile {
                 }
                 try {
                     Class<?> dispatcherClass = Class.forName(classPath);
-                    Method dispatcherMethod = dispatcherClass.getDeclaredMethod(methodName);
+                    Method dispatcherMethod = dispatcherClass.getDeclaredMethod(methodName, Event.class);
                     map.put(annotation, dispatcherMethod);
                 } catch (ClassNotFoundException e) {
                     logger.error("Failed to get dispatcher class {}", classPath, e);
