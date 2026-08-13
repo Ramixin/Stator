@@ -7,9 +7,10 @@ import net.ramixin.stator.entrypoints.Entrypoint;
 import net.ramixin.stator.entrypoints.EntrypointParameter;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.Reader;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +26,8 @@ public final class EntrypointsMetaFile {
         this.commonList = commonList;
     }
 
-    public static EntrypointsMetaFile read(File file, Logger logger) throws StatorMetaFileException {
-        try(FileReader reader = new FileReader(file)) {
+    public static EntrypointsMetaFile read(Path path, Logger logger) throws StatorMetaFileException {
+        try(Reader reader = Files.newBufferedReader(path)) {
             JsonObject object = JsonParser.parseReader(reader).getAsJsonObject();
             int schema = object.get("schema").getAsInt();
             if(schema != 0) throw new IllegalArgumentException("Unsupported Schema version: " + schema);

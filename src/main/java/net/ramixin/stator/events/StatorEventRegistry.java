@@ -7,9 +7,9 @@ import net.ramixin.stator.metadata.StatorMetaFileException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.lang.classfile.Annotation;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +20,8 @@ public final class StatorEventRegistry {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatorEventRegistry.class);
     private static final Map<Class<?>, EventDispatcher<?, ?>> dispatchers = new HashMap<>();
 
-    public static void registerDispatchersMetafile(String loader, File file) throws StatorMetaFileException {
-        DispatchersMetafile metafile = DispatchersMetafile.read(file, LOGGER);
+    public static void registerDispatchersMetafile(String loader, Path path) throws StatorMetaFileException {
+        DispatchersMetafile metafile = DispatchersMetafile.read(path, LOGGER);
         Set<Class<?>> dispatcherAnnotations = metafile.getDispatcherAnnotations(loader);
         for(Class<?> annotation : dispatcherAnnotations) {
             if(!annotation.isAnnotation() || annotation.getAnnotation(StatorEventAnnotation.class) == null) {
@@ -46,8 +46,8 @@ public final class StatorEventRegistry {
         dispatchers.put(annotation, dispatcher);
     }
 
-    public static void registerEventsMetaFile(File file) throws StatorMetaFileException {
-        EventsMetaFile metafile = EventsMetaFile.read(file, LOGGER);
+    public static void registerEventsMetaFile(Path path) throws StatorMetaFileException {
+        EventsMetaFile metafile = EventsMetaFile.read(path, LOGGER);
         Set<Class<?>> eventAnnotations = metafile.getEventAnnotations();
         for(Class<?> anno : eventAnnotations) {
             if(!anno.isAnnotation() || anno.getAnnotation(StatorEventAnnotation.class) == null) {

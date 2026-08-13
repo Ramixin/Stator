@@ -6,9 +6,10 @@ import com.google.gson.JsonParser;
 import net.ramixin.stator.events.StatorEventAnnotation;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.Reader;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public final class EventsMetaFile {
@@ -19,8 +20,8 @@ public final class EventsMetaFile {
         this.eventMap = eventMap;
     }
 
-    public static EventsMetaFile read(File file, Logger logger) throws StatorMetaFileException {
-        try(FileReader reader = new FileReader(file)) {
+    public static EventsMetaFile read(Path path, Logger logger) throws StatorMetaFileException {
+        try(Reader reader = Files.newBufferedReader(path)) {
             JsonObject object = JsonParser.parseReader(reader).getAsJsonObject();
             int schema = object.get("schema").getAsInt();
             if(schema != 0) throw new IllegalArgumentException("Unsupported Schema version: " + schema);

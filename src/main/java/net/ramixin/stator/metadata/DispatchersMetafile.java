@@ -5,9 +5,10 @@ import com.google.gson.JsonParser;
 import net.ramixin.stator.events.Event;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileReader;
+import java.io.Reader;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -21,8 +22,8 @@ public final class DispatchersMetafile {
         this.dispatchers = dispatchers;
     }
 
-    public static DispatchersMetafile read(File file, Logger logger) throws StatorMetaFileException {
-        try(FileReader reader = new FileReader(file)) {
+    public static DispatchersMetafile read(Path path, Logger logger) throws StatorMetaFileException {
+        try(Reader reader = Files.newBufferedReader(path)) {
             JsonObject object = JsonParser.parseReader(reader).getAsJsonObject();
             int schema = object.get("schema").getAsInt();
             if(schema != 0) throw new IllegalArgumentException("Unsupported Schema version: " + schema);
