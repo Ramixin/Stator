@@ -52,7 +52,7 @@ public final class DispatcherProcessor extends AbstractProcessor {
             }
             loaders.add(entry.getKey(), dispatchers);
         }
-        object.add("dispatchers", loaders);
+        object.add("loaders", loaders);
 
         Filer filer = processingEnv.getFiler();
         try {

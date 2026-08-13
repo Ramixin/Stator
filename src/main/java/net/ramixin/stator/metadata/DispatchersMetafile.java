@@ -53,6 +53,7 @@ public final class DispatchersMetafile {
                 try {
                     Class<?> dispatcherClass = Class.forName(classPath);
                     Method dispatcherMethod = dispatcherClass.getDeclaredMethod(methodName, Event.class);
+                    dispatcherMethod.setAccessible(true);
                     map.put(annotation, dispatcherMethod);
                 } catch (ClassNotFoundException e) {
                     logger.error("Failed to get dispatcher class {}", classPath, e);

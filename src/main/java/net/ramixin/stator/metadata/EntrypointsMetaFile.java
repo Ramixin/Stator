@@ -47,9 +47,9 @@ public final class EntrypointsMetaFile {
 
     private static EntrypointsMetaFile readV0(JsonObject object, Logger logger) {
         return new EntrypointsMetaFile(
-                extractV0Entrypoints(object.getAsJsonArray("client"), logger),
-                extractV0Entrypoints(object.getAsJsonArray("server"), logger),
-                extractV0Entrypoints(object.getAsJsonArray("common"), logger)
+                extractV0Entrypoints(object.getAsJsonArray("CLIENT"), logger),
+                extractV0Entrypoints(object.getAsJsonArray("SERVER"), logger),
+                extractV0Entrypoints(object.getAsJsonArray("COMMON"), logger)
         );
     }
 
