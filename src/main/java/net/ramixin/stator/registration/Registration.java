@@ -18,4 +18,5 @@ public interface Registration {
 
     <T extends CustomPacketPayload> void serverboundPayload(CustomPacketPayload.Type<T> type, StreamCodec<RegistryFriendlyByteBuf, T> codec, Consumer<PayloadContext<T>> handler);
 
+    void loadDeferred(DeferredRegistration deferred);
 }

@@ -18,4 +18,5 @@ public interface ClientRegistration {
 
     <M extends AbstractContainerMenu, S extends Screen & MenuAccess<M>> void screen(Registrant<MenuType<M>> menuType, TriFunction<M, Inventory, Component, S> screenFactory);
 
+    void loadDeferred(DeferredClientRegistration registration);
 }

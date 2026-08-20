@@ -24,6 +24,6 @@ public enum EntrypointParameter {
     }
 
     public Class<?> getClazz() throws ClassNotFoundException {
-        return Class.forName("net.ramixin.stator." + this.classPath);
+        return Class.forName(this.classPath);
     }
 }
