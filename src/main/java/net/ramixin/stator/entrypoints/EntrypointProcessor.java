@@ -15,18 +15,13 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @SupportedSourceVersion(SourceVersion.RELEASE_25)
 @SupportedAnnotationTypes("net.ramixin.stator.entrypoints.Entrypoint")
 public final class EntrypointProcessor extends AbstractProcessor {
 
-    private final List<Entry> clientList = new ArrayList<>();
-    private final List<Entry> serverList = new ArrayList<>();
-    private final List<Entry> commonList = new ArrayList<>();
+    private final Map<Side, Map<Phase, List<Entry>>> entries = new HashMap<>();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -57,10 +52,12 @@ public final class EntrypointProcessor extends AbstractProcessor {
                 continue;
             }
             Map<? extends ExecutableElement, ? extends AnnotationValue> values = anno.getElementValues();
-            Entrypoint.Side side = null;
+            Side side = null;
+            Phase phase = null;
             for(Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : values.entrySet()) {
                 String name = entry.getKey().getSimpleName().toString();
-                if(name.equals("value")) side = Entrypoint.Side.valueOf(entry.getValue().getValue().toString());
+                if(name.equals("side")) side = Side.valueOf(entry.getValue().getValue().toString());
+                else if(name.equals("phase")) phase = Phase.valueOf(entry.getValue().getValue().toString());
                 else err("Unknown initializer annotation attribute: " + name, anno.getAnnotationType().asElement());
             }
             if(side == null) {
@@ -74,30 +71,36 @@ public final class EntrypointProcessor extends AbstractProcessor {
                 TypeMirror type = parameter.asType();
 
                 if(types.isAssignable(type, clientNetworkingType)) {
-                    if(side != Entrypoint.Side.CLIENT) {
+                    if(side != Side.CLIENT) {
                         err("Client Networking cannot be used on a non-client side initializer", parameter);
                         continue;
                     }
                     parameters.add(EntrypointParameter.CLIENT_NETWORKING);
                 }
                 else if(types.isAssignable(type, networkingType)) {
-                    if(side == Entrypoint.Side.CLIENT) {
+                    if(side == Side.CLIENT) {
                         err("Networking cannot be used on a client side initializer", parameter);
                         continue;
                     }
                     parameters.add(EntrypointParameter.NETWORKING);
                 }
                 else if(types.isAssignable(type, registrationType)) {
-                    if(side == Entrypoint.Side.CLIENT) {
+                    if(side == Side.CLIENT) {
                         err("Registration cannot be used on a client side initializer", parameter);
                         continue;
+                    }
+                    if(phase != Phase.INIT) {
+                        err("Registration can only be used during INIT phase", parameter);
                     }
                     parameters.add(EntrypointParameter.REGISTRATION);
                 }
                 else if(types.isAssignable(type, clientRegistrationType)) {
-                    if(side != Entrypoint.Side.CLIENT) {
+                    if(side != Side.CLIENT) {
                         err("Client Registration cannot be used on a non-client side initializer", parameter);
                         continue;
+                    }
+                    if(phase != Phase.INIT) {
+                        err("Client Registration can only be used during INIT phase", parameter);
                     }
                     parameters.add(EntrypointParameter.CLIENT_REGISTRATION);
                 }
@@ -106,26 +109,16 @@ public final class EntrypointProcessor extends AbstractProcessor {
             }
 
             Entry entry = new Entry(method.getEnclosingElement().toString(), method.getSimpleName().toString(), parameters);
-            switch (side) {
-                case CLIENT -> clientList.add(entry);
-                case SERVER -> serverList.add(entry);
-                case COMMON -> commonList.add(entry);
-            }
+            Map<Phase, List<Entry>> map = entries.computeIfAbsent(side, _ -> new HashMap<>());
+            List<Entry> list = map.computeIfAbsent(phase, _ -> new ArrayList<>());
+            list.add(entry);
         }
 
         if(!roundEnv.processingOver()) return true;
 
         JsonObject object = new JsonObject();
         object.addProperty("schema", 0);
-        JsonArray client = new JsonArray();
-        for(Entry entry : clientList) client.add(entry.toJson());
-        JsonArray server = new JsonArray();
-        for(Entry entry : serverList) server.add(entry.toJson());
-        JsonArray common = new JsonArray();
-        for(Entry entry : commonList) common.add(entry.toJson());
-        object.add("CLIENT", client);
-        object.add("SERVER", server);
-        object.add("COMMON", common);
+        object.add("sides", buildSides());
 
         Filer filer = processingEnv.getFiler();
         try {
@@ -141,6 +134,26 @@ public final class EntrypointProcessor extends AbstractProcessor {
             throw new RuntimeException(e);
         }
         return true;
+    }
+
+    private JsonObject buildSides() {
+        JsonObject sides = new JsonObject();
+        for(Map.Entry<Side, Map<Phase, List<Entry>>> entry : entries.entrySet()) {
+            sides.add(entry.getKey().name(), buildSide(entry.getValue()));
+        }
+        return sides;
+    }
+
+    private JsonObject buildSide(Map<Phase, List<Entry>> map) {
+        JsonObject object = new JsonObject();
+        for(Phase phase : map.keySet()) {
+            JsonArray array = new JsonArray();
+            for(Entry entry : map.get(phase)) {
+                array.add(entry.toJson());
+            }
+            object.add(phase.name(), array);
+        }
+        return object;
     }
 
     private AnnotationMirror getMetaAnnotation(Element element) {

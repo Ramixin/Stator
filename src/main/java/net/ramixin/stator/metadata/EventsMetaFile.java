@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import net.ramixin.stator.events.StatorEventAnnotation;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -21,17 +22,25 @@ public final class EventsMetaFile {
     }
 
     public static EventsMetaFile read(Path path, Logger logger) throws StatorMetaFileException {
-        try(Reader reader = Files.newBufferedReader(path)) {
+        try {
+            return read(Files.newBufferedReader(path), logger, EventsMetaFile.class.getClassLoader());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static EventsMetaFile read(Reader reader, Logger logger, ClassLoader loader) throws StatorMetaFileException {
+        try(reader) {
             JsonObject object = JsonParser.parseReader(reader).getAsJsonObject();
             int schema = object.get("schema").getAsInt();
             if(schema != 0) throw new IllegalArgumentException("Unsupported Schema version: " + schema);
-            return readV0(object, logger);
+            return readV0(object, logger, loader);
         } catch (Exception e) {
             throw new StatorMetaFileException("Failed to read metafile", e);
         }
     }
 
-    private static EventsMetaFile readV0(JsonObject object, Logger logger) {
+    private static EventsMetaFile readV0(JsonObject object, Logger logger, ClassLoader loader) {
         JsonObject entries = object.getAsJsonObject("entries");
         HashMap<Class<?>, List<Method>> events = new HashMap<>();
 
@@ -56,7 +65,7 @@ public final class EventsMetaFile {
                 String classPath = entry.get("classPath").getAsString();
                 String methodName = entry.get("methodName").getAsString();
                 try {
-                    Class<?> clazz = Class.forName(classPath);
+                    Class<?> clazz = Class.forName(classPath, false, loader);
                     Method method = clazz.getDeclaredMethod(methodName, contextClazz);
                     method.setAccessible(true);
                     methods.add(method);

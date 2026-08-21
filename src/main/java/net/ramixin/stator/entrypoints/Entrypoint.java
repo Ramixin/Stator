@@ -9,12 +9,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Entrypoint {
 
-    Side value();
+    Side side();
 
-    enum Side {
-        CLIENT,
-        COMMON,
-        SERVER
-    }
+    Phase phase();
 
 }

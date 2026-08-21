@@ -3,57 +3,75 @@ package net.ramixin.stator.metadata;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.ramixin.stator.entrypoints.Entrypoint;
 import net.ramixin.stator.entrypoints.EntrypointParameter;
+import net.ramixin.stator.entrypoints.Phase;
+import net.ramixin.stator.entrypoints.Side;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class EntrypointsMetaFile {
 
-    private final List<EntrypointData> clientList;
-    private final List<EntrypointData> serverList;
-    private final List<EntrypointData> commonList;
+    private final Map<Side, Map<Phase, List<EntrypointData>>> entrypoints;
 
-    private EntrypointsMetaFile(List<EntrypointData> clientList, List<EntrypointData> serverList, List<EntrypointData> commonList) {
-        this.clientList = clientList;
-        this.serverList = serverList;
-        this.commonList = commonList;
+    private EntrypointsMetaFile(Map<Side, Map<Phase, List<EntrypointData>>> entrypoints) {
+        this.entrypoints = entrypoints;
     }
 
     public static EntrypointsMetaFile read(Path path, Logger logger) throws StatorMetaFileException {
-        try(Reader reader = Files.newBufferedReader(path)) {
+        try {
+            return read(Files.newBufferedReader(path), logger, EntrypointsMetaFile.class.getClassLoader());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static EntrypointsMetaFile read(Reader reader, Logger logger, ClassLoader loader) throws StatorMetaFileException {
+        try(reader) {
             JsonObject object = JsonParser.parseReader(reader).getAsJsonObject();
             int schema = object.get("schema").getAsInt();
             if(schema != 0) throw new IllegalArgumentException("Unsupported Schema version: " + schema);
-            return readV0(object, logger);
+            return readV0(object, logger, loader);
         } catch (Exception e) {
             throw new StatorMetaFileException("Failed to read metafile", e);
         }
     }
 
-    public List<EntrypointData> getSideList(Entrypoint.Side side) {
-        return switch (side) {
-            case CLIENT -> clientList;
-            case SERVER -> serverList;
-            case COMMON -> commonList;
-        };
+    public List<EntrypointData> getData(Side side, Phase phase) {
+        if(!entrypoints.containsKey(side)) return List.of();
+        Map<Phase, List<EntrypointData>> map = entrypoints.get(side);
+        if(!map.containsKey(phase)) return List.of();
+        return map.get(phase);
     }
 
-    private static EntrypointsMetaFile readV0(JsonObject object, Logger logger) {
-        return new EntrypointsMetaFile(
-                extractV0Entrypoints(object.getAsJsonArray("CLIENT"), logger),
-                extractV0Entrypoints(object.getAsJsonArray("SERVER"), logger),
-                extractV0Entrypoints(object.getAsJsonArray("COMMON"), logger)
-        );
+    private static EntrypointsMetaFile readV0(JsonObject object, Logger logger, ClassLoader loader) {
+        Map<Side, Map<Phase, List<EntrypointData>>> map = new HashMap<>();
+
+        JsonObject sides = object.getAsJsonObject("sides");
+        for(String key : sides.keySet()) {
+            Side side = Side.valueOf(key);
+            JsonObject sideObject = sides.getAsJsonObject(key);
+            for(String key2 : sideObject.keySet()) {
+                Phase phase = Phase.valueOf(key2);
+                JsonArray list = sideObject.getAsJsonArray(key2);
+                List<EntrypointData> data = extractV0Entrypoints(list, logger, loader);
+
+                Map<Phase, List<EntrypointData>> phaseMap = map.computeIfAbsent(side, _ -> new HashMap<>());
+                phaseMap.put(phase, data);
+            }
+        }
+        return new EntrypointsMetaFile(map);
     }
 
-    private static List<EntrypointData> extractV0Entrypoints(JsonArray array, Logger logger) {
+    private static List<EntrypointData> extractV0Entrypoints(JsonArray array, Logger logger, ClassLoader loader) {
         List<EntrypointData> entrypointData = new ArrayList<>();
         for(int i = 0; i < array.size(); i++) {
             JsonObject entry = array.get(i).getAsJsonObject();
@@ -62,7 +80,7 @@ public final class EntrypointsMetaFile {
             JsonArray parametersArray = entry.getAsJsonArray("parameters");
             Class<?> clazz;
             try {
-                clazz = Class.forName(classPath);
+                clazz = Class.forName(classPath, false, loader);
             } catch (ClassNotFoundException e) {
                 logger.error("Failed to get entrypoint class {}", classPath, e);
                 continue;

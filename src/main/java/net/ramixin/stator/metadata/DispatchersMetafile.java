@@ -5,6 +5,7 @@ import com.google.gson.JsonParser;
 import net.ramixin.stator.events.Event;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -23,17 +24,25 @@ public final class DispatchersMetafile {
     }
 
     public static DispatchersMetafile read(Path path, Logger logger) throws StatorMetaFileException {
-        try(Reader reader = Files.newBufferedReader(path)) {
+        try {
+            return read(Files.newBufferedReader(path), logger, DispatchersMetafile.class.getClassLoader());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static DispatchersMetafile read(Reader reader, Logger logger, ClassLoader loader) throws StatorMetaFileException {
+        try(reader) {
             JsonObject object = JsonParser.parseReader(reader).getAsJsonObject();
             int schema = object.get("schema").getAsInt();
             if(schema != 0) throw new IllegalArgumentException("Unsupported Schema version: " + schema);
-            return readV0(object, logger);
+            return readV0(object, logger, loader);
         } catch (Exception e) {
             throw new StatorMetaFileException("Failed to read metafile", e);
         }
     }
 
-    private static DispatchersMetafile readV0(JsonObject object, Logger logger) {
+    private static DispatchersMetafile readV0(JsonObject object, Logger logger, ClassLoader classLoader) {
         Map<String, Map<Class<?>, Method>> dispatchers = new HashMap<>();
         JsonObject loaders = object.getAsJsonObject("loaders");
         for(String loaderPath : loaders.keySet()) {
@@ -51,7 +60,7 @@ public final class DispatchersMetafile {
                     continue;
                 }
                 try {
-                    Class<?> dispatcherClass = Class.forName(classPath);
+                    Class<?> dispatcherClass = Class.forName(classPath, false, classLoader);
                     Method dispatcherMethod = dispatcherClass.getDeclaredMethod(methodName, Event.class);
                     dispatcherMethod.setAccessible(true);
                     map.put(annotation, dispatcherMethod);
